@@ -1,16 +1,30 @@
-# This is a sample Python script.
+from transformers import AutoModelForCausalLM, AutoTokenizer
+device = "cuda" # the device to load the model onto
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+model = AutoModelForCausalLM.from_pretrained(
+    "Qwen/Qwen2-7B-Instruct-GPTQ-Int8", # the quantized model
+    device_map="auto"
+)
+tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2-7B-Instruct-GPTQ-Int8")
 
+prompt = "Give me a short introduction to large language model."
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": prompt}
+]
+text = tokenizer.apply_chat_template(
+    messages,
+    tokenize=False,
+    add_generation_prompt=True
+)
+model_inputs = tokenizer([text], return_tensors="pt").to(device)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+generated_ids = model.generate(
+    model_inputs.input_ids,
+    max_new_tokens=512
+)
+generated_ids = [
+    output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+]
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
