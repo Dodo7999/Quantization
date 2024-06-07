@@ -1,5 +1,7 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
-device = "cuda" # the device to load the model onto
+import torch
+
+device = torch.device(f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu') # the device to load the model onto
 
 model = AutoModelForCausalLM.from_pretrained(
     "Qwen/Qwen2-7B-Instruct-GPTQ-Int8", # the quantized model
