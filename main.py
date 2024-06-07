@@ -2,9 +2,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
 device = torch.device(f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu') # the device to load the model onto
-
 model = AutoModelForCausalLM.from_pretrained(
-    "Qwen/Qwen2-7B-Instruct-GPTQ-Int8", # the quantized model
+    "Qwen/Qwen2-7B-Instruct-GPTQ-Int8",
+    torch_dtype="auto",
     device_map="auto"
 )
 tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2-7B-Instruct-GPTQ-Int8")
