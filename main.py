@@ -1,4 +1,6 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from huggingface_hub import login
+login(token="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")
 import torch
 
 device = torch.device(f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu') # the device to load the model onto
