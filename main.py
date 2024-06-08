@@ -6,7 +6,10 @@ import torch
 device = torch.device(f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu') # the device to load the model onto
 
 model_id = "CohereForAI/aya-23-35B"
-tokenizer = AutoTokenizer.from_pretrained(model_id).to(device)
+tokenizer = AutoTokenizer.from_pretrained(
+    model_id,
+    force_download=True
+).to(device)
 model = AutoModelForCausalLM.from_pretrained(model_id).to(device)
 
 # Format message with the command-r-plus chat template
