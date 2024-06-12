@@ -7,9 +7,9 @@ from datasets import load_dataset
 from huggingface_hub import login
 from transformers import AutoTokenizer
 
-login(
-    token="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",
-)
+# login(
+#     token="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",
+# )
 
 device = torch.device(
     f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu')  # the device to load the model onto
