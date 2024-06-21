@@ -14,7 +14,7 @@ from transformers import AutoTokenizer
 device = torch.device(
     f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu')  # the device to load the model onto
 
-model_id = "CohereForAI/aya-23-35B"
+model_path = "CohereForAI/aya-23-35B"
 quant_path = "aya23_35B_awq"
 
 quant_config = { "zero_point": True, "q_group_size": 128, "w_bit": 4, "version": "GEMM" }
