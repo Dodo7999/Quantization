@@ -2,9 +2,9 @@ import logging
 
 import numpy as np
 import torch
-from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
 from datasets import load_dataset
 from huggingface_hub import login
+from awq import AutoAWQForCausalLM
 from transformers import AutoTokenizer
 
 # login(
@@ -15,24 +15,13 @@ device = torch.device(
     f'cuda:{torch.cuda.current_device()}' if torch.cuda.is_available() else 'cpu')  # the device to load the model onto
 
 model_id = "CohereForAI/aya-23-35B"
-quant_path = "aya23_35B_gptq"
+quant_path = "aya23_35B_awq"
 
-quantize_config = BaseQuantizeConfig(
-    bits=4,  # 4 or 8
-    group_size=128,
-    damp_percent=0.01,
-    desc_act=False,  # set to False can significantly speed up inference but the perplexity may slightly bad
-    static_groups=False,
-    sym=True,
-    true_sequential=True,
-    model_name_or_path=None,
-    model_file_base_name="model"
-)
-max_len = 8192
+quant_config = { "zero_point": True, "q_group_size": 128, "w_bit": 4, "version": "GEMM" }
+# Load model
+model = AutoAWQForCausalLM.from_pretrained(model_path, device_map = None, use_cache = False)
+tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoGPTQForCausalLM.from_pretrained(model_id, quantize_config, torch_dtype=torch.bfloat16,
-                                            low_cpu_mem_usage=True, )
 
 
 def check_role(x):
@@ -77,20 +66,23 @@ def load_saiga():
     data['prompts'] = data['messages'].apply(chat_template)
     data = data[data.prompts != '0'].sample(5000)
     x = [prompt for prompt in data["prompts"]]
-    res_data = []
-    for text in x:
-        model_inputs = tokenizer([text])
-        input_ids = torch.tensor(model_inputs.input_ids[:max_len], dtype=torch.int)
-        res_data.append(dict(input_ids=input_ids, attention_mask=input_ids.ne(tokenizer.pad_token_id)))
-    return res_data
+    #res_data = []
+    #for text in x:
+    #    model_inputs = tokenizer([text])
+    #    input_ids = torch.tensor(model_inputs.input_ids[:max_len], dtype=torch.int)
+    #    res_data.append(dict(input_ids=input_ids, attention_mask=input_ids.ne(tokenizer.pad_token_id)))
+    return x #res_data
 
 
-data = load_saiga()
+model.quantize(tokenizer, quant_config=quant_config, calib_data=load_saiga())
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)s [%(name)s] %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
-)
-model.quantize(data, cache_examples_on_gpu=False, batch_size=1, use_triton=False)
+#logging.basicConfig(
+#    format="%(asctime)s %(levelname)s [%(name)s] %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
+#)
+#model.quantize(data, cache_examples_on_gpu=False, batch_size=1, use_triton=False)
 
-model.save_quantized(quant_path, use_safetensors=True)
+#model.save_quantized(quant_path, use_safetensors=True)
+#tokenizer.save_pretrained(quant_path)
+
+model.save_quantized(quant_path)
 tokenizer.save_pretrained(quant_path)
